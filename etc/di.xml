@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <preference for="Coresh\CustomerAttribute\Model\Uuid\GeneratorInterface"
+                type="Coresh\CustomerAttribute\Model\Uuid\Generator"/>
+    <preference for="Coresh\CustomerAttribute\Model\Uuid\AssignerInterface"
+                type="Coresh\CustomerAttribute\Model\Uuid\Assigner"/>
+
+    <!--
+        Global scope is intentional: UUID immutability must be enforced for Admin,
+        storefront, GraphQL, REST, and programmatic customer repository saves.
+    -->
+    <type name="Magento\Customer\Model\ResourceModel\CustomerRepository">
+        <plugin name="coresh_customer_attribute_assign_uuid_before_customer_save"
+                type="Coresh\CustomerAttribute\Plugin\CustomerRepository\AssignUuidBeforeSavePlugin"
+                sortOrder="10"/>
+    </type>
+</config>

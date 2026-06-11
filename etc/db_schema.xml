@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <table name="customer_entity" resource="default" engine="innodb" comment="Customer Entity">
+        <column xsi:type="varchar"
+                name="uuid"
+                nullable="true"
+                length="36"
+                comment="Customer UUID"/>
+        <constraint xsi:type="unique" referenceId="CORESH_CUSTOMER_ENTITY_UUID_UNQ">
+            <column name="uuid"/>
+        </constraint>
+    </table>
+</schema>

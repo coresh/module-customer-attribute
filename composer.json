@@ -1,0 +1,32 @@
+{
+    "name": "coresh/module-customer-attribute",
+    "version": "1.0.0",
+    "description": "Magento 2 module that adds immutable UUID support for customers and exposes it through GraphQL.",
+    "type": "magento2-module",
+    "license": [
+        "proprietary"
+    ],
+    "require": {
+        "php": "^8.2 || ^8.3 || ^8.4",
+        "magento/framework": "*",
+        "magento/module-customer": "*",
+        "magento/module-eav": "*",
+        "magento/module-customer-graph-ql": "*",
+        "magento/module-graph-ql": "*"
+    },
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "Coresh\\CustomerAttribute\\": ""
+        }
+    },
+    "authors": [
+        {
+            "name": "Dmitrii Dmitriev",
+            "homepage": "https://www.upwork.com/freelancers/dmitriid15",
+            "role": "Senior Adobe Commerce Magento 2 Full-Stack Developer | Enterprise Solutions Architect"
+        }
+    ]
+}

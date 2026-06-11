@@ -1,0 +1,10 @@
+{
+  "customer_entity": {
+    "column": {
+      "uuid": true
+    },
+    "constraint": {
+      "CORESH_CUSTOMER_ENTITY_UUID_UNQ": true
+    }
+  }
+}
