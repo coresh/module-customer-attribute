@@ -1,4 +1,4 @@
-The **Coresh_CustomerAttribute** module adds a customer `uuid` attribute to Magento 2.
+## The **Coresh_CustomerAttribute** module adds a customer `uuid` attribute to Magento 2.
 
 It automatically:
 
