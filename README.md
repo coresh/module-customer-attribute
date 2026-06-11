@@ -200,3 +200,33 @@ Declarative schema
 ```
 
 This design satisfies the assessment requirements while keeping the module upgrade-safe, testable, and aligned with Magento extension architecture.
+
+## Check metadata:
+
+```
+SELECT ea.attribute_id,
+    ->        ea.attribute_code,
+    ->        ea.backend_type,
+    ->        ea.is_unique,
+    ->        cea.is_visible,
+    ->        cea.is_used_in_grid,
+    ->        cea.is_visible_in_grid,
+    ->        cea.is_filterable_in_grid,
+    ->        cea.is_searchable_in_grid
+    -> FROM eav_attribute ea
+    -> JOIN customer_eav_attribute cea
+    ->   ON cea.attribute_id = ea.attribute_id
+    -> WHERE ea.entity_type_id = (
+    ->     SELECT entity_type_id
+    ->     FROM eav_entity_type
+    ->     WHERE entity_type_code = 'customer'
+    -> )
+    -> AND ea.attribute_code = 'uuid';
++--------------+----------------+--------------+-----------+------------+-----------------+--------------------+-----------------------+-----------------------+
+| attribute_id | attribute_code | backend_type | is_unique | is_visible | is_used_in_grid | is_visible_in_grid | is_filterable_in_grid | is_searchable_in_grid |
++--------------+----------------+--------------+-----------+------------+-----------------+--------------------+-----------------------+-----------------------+
+|          831 | uuid           | static       |         1 |          1 |               1 |                  1 |                     1 |                     1 |
++--------------+----------------+--------------+-----------+------------+-----------------+--------------------+-----------------------+-----------------------+
+1 row in set (0.000 sec)
+
+```

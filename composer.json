@@ -1,6 +1,6 @@
 {
     "name": "coresh/module-customer-attribute",
-    "version": "1.0.0",
+    "version": "1.0.5",
     "description": "Magento 2 module that adds immutable UUID support for customers and exposes it through GraphQL.",
     "type": "magento2-module",
     "license": [
