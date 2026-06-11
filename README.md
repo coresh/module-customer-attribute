@@ -10,6 +10,33 @@ It automatically:
 
 Its main purpose is to give each customer a stable, unique, secure external identifier without exposing the internal `customer_id`.
 
+## Installation
+
+Install the module via Composer:
+
+```bash
+composer require coresh/module-customer-attribute
+```
+
+Enable the module and apply Magento setup changes:
+
+```bash
+bin/magento module:enable Coresh_CustomerAttribute
+bin/magento setup:upgrade
+bin/magento cache:flush
+```
+
+For production mode, also run:
+
+```bash
+bin/magento setup:di:compile
+bin/magento setup:static-content:deploy -f
+```
+
+During `bin/magento setup:upgrade`, the module creates the customer UUID attribute metadata, updates the customer grid configuration, and assigns UUIDs to existing customer records.
+
+## Module Overview
+
 The architecture uses both **Data Patches** and a **Plugin** because they solve two separate Magento lifecycle problems.
 
 A **Data Patch** handles installation and upgrade-time work. It is the right place to create the customer attribute metadata, configure the attribute for the Admin customer grid, and backfill UUIDs for existing customer records during `bin/magento setup:upgrade`.
