@@ -277,3 +277,102 @@ SELECT entity_id, email, uuid
 +-----------+---------------------------+--------------------------------------+
 
 ```
+
+### GraphQL query Guest request:
+
+```graphql
+BASE_URL="https://example.com"
+EMAIL="test@example.com"
+PASSWORD="************************"
+
+curl -s -X POST "$BASE_URL/graphql" \
+  -H "Content-Type: application/json" \
+  --data-binary '{
+    "query": "query { customer { email uuid } }"
+  }' | jq
+
+```
+
+### GraphQL query Guest request result:
+
+```
+{
+  "errors": [
+    {
+      "message": "The current customer isn't authorized.",
+      "locations": [
+        {
+          "line": 1,
+          "column": 9
+        }
+      ],
+      "path": [
+        "customer"
+      ],
+      "extensions": {
+        "category": "graphql-authorization"
+      }
+    }
+  ],
+  "data": {
+    "customer": null
+  }
+}
+
+```
+
+### Get Customer Token:
+
+```bash
+TOKEN=$(curl -s -X POST "$BASE_URL/graphql" \
+  -H "Content-Type: application/json" \
+  --data-binary "{
+    \"query\": \"mutation { generateCustomerToken(email: \\\"$EMAIL\\\", password: \\\"$PASSWORD\\\") { token } }\"
+  }" | jq -r '.data.generateCustomerToken.token')
+
+echo "$TOKEN"
+
+```
+
+### Authenticated request:
+
+```
+curl -s -X POST "$BASE_URL/graphql" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  --data-binary '{
+    "query": "query { customer { email uuid } }"
+  }' | jq
+```
+
+### Authenticated request result:
+
+```
+{
+  "data": {
+    "customer": {
+      "email": "test@example.com",
+      "uuid": "e30a6707-6fa4-4519-8ae3-e98dbe9555af"
+    }
+  }
+}
+
+```
+
+### Check UUID format request:
+
+```
+curl -s -X POST "$BASE_URL/graphql" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  --data-binary '{
+    "query": "query { customer { uuid } }"
+  }' | jq -r '.data.customer.uuid'
+```
+
+### Check UUID format request result:
+
+```
+e30a6707-6fa4-4519-8ae3-e98fbe95f5af
+
+```
