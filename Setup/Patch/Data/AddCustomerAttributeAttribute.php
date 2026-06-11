@@ -1,13 +1,12 @@
-<?php
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Coresh\CustomerAttribute\Setup\Patch\Data;
 
 use Magento\Customer\Model\Customer;
 use Magento\Customer\Setup\CustomerSetupFactory;
 use Magento\Eav\Api\AttributeRepositoryInterface;
-use Magento\Framework\Setup\ModuleDataSetupInterface;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
+use Magento\Framework\Setup\ModuleDataSetupInterface;
 
 /**
  * Adds customer UUID attribute metadata.
@@ -26,7 +25,7 @@ use Magento\Framework\Setup\Patch\DataPatchInterface;
  * Magento Open Source / Adobe Commerce notes:
  * - Customer EAV metadata is available in both editions.
  * - B2B/Company modules in Adobe Commerce do not change this storage strategy.
-  *
+ *
  *
  * @author: Dmitrii Dmitriev
  * @link: https://www.upwork.com/freelancers/dmitriid15
@@ -44,8 +43,7 @@ class AddCustomerAttributeAttribute implements DataPatchInterface
         private readonly ModuleDataSetupInterface $moduleDataSetup,
         private readonly CustomerSetupFactory $customerSetupFactory,
         private readonly AttributeRepositoryInterface $attributeRepository
-    ) {
-    }
+    ) {}
 
     /**
      * Apply the customer UUID attribute metadata.
@@ -69,7 +67,7 @@ class AddCustomerAttributeAttribute implements DataPatchInterface
                     'label' => 'UUID',
                     'input' => 'text',
                     'required' => false,
-                    'visible' => false,
+                    'visible' => true,
                     'system' => false,
                     'user_defined' => false,
                     'unique' => true,
@@ -88,7 +86,7 @@ class AddCustomerAttributeAttribute implements DataPatchInterface
         $attribute->setData('is_visible_in_grid', true);
         $attribute->setData('is_filterable_in_grid', true);
         $attribute->setData('is_searchable_in_grid', true);
-        $attribute->setData('is_visible', false);
+        $attribute->setData('is_visible', true);
         $attribute->setData('is_required', false);
         $attribute->setData('is_unique', true);
 
