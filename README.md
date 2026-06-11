@@ -334,8 +334,6 @@ vendor/bin/phpunit \
 
 ## Functional Acceptance Checklist
 
-Before delivery, verify:
-
 ```text
 [OK] Module is installed and enabled.
 [OK] setup:upgrade completes successfully.
