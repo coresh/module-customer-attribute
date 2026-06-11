@@ -1,4 +1,383 @@
-## The **Coresh_CustomerAttribute** module adds a customer `uuid` attribute to Magento 2.
+# Coresh_CustomerAttribute Documentation
+
+## Overview
+
+The **Coresh_CustomerAttribute** module adds a stable customer `uuid` attribute to Magento 2 / Adobe Commerce.
+
+The module automatically assigns UUIDs to existing and new customers, enforces UUID uniqueness, displays UUIDs in the Admin customer grid, prevents manual UUID changes, and exposes UUID through GraphQL only for authenticated customers.
+
+## Compatibility
+
+- Magento Open Source 2.4.7+
+- Adobe Commerce 2.4.7+
+- Magento 2.4.8 / 2.4.9 compatible
+- PHP 8.2+
+- Composer-installable Magento 2 module
+
+## Installation
+
+### 1. Install the module
+
+Using Composer:
+
+```bash
+composer require coresh/module-customer-attribute
+```
+
+If installing manually, place the module in:
+
+```text
+app/code/Coresh/CustomerAttribute
+```
+
+### 2. Enable the module
+
+```bash
+bin/magento module:enable Coresh_CustomerAttribute
+```
+
+### 3. Run Magento setup
+
+```bash
+bin/magento setup:upgrade
+bin/magento setup:di:compile
+bin/magento cache:flush
+bin/magento indexer:reset customer_grid
+bin/magento indexer:reindex customer_grid
+```
+
+### 4. Verify module status
+
+```bash
+bin/magento module:status Coresh_CustomerAttribute
+```
+
+Expected result:
+
+```text
+Coresh_CustomerAttribute
+```
+
+## Database Verification
+
+### Verify the UUID column on `customer_entity`
+
+```sql
+SHOW COLUMNS FROM customer_entity LIKE 'uuid';
+```
+
+Expected result:
+
+```text
+uuid | varchar(36)
+```
+
+### Verify UUID values for customers
+
+```sql
+SELECT entity_id, email, uuid
+FROM customer_entity
+ORDER BY entity_id DESC
+LIMIT 10;
+```
+
+Expected result: each customer should have a UUID value.
+
+### Verify UUID uniqueness
+
+```sql
+SELECT uuid, COUNT(*) AS total
+FROM customer_entity
+WHERE uuid IS NOT NULL AND uuid <> ''
+GROUP BY uuid
+HAVING total > 1;
+```
+
+Expected result:
+
+```text
+Empty set
+```
+
+### Verify UUID in the customer grid index
+
+```sql
+SHOW COLUMNS FROM customer_grid_flat LIKE 'uuid';
+```
+
+Expected result:
+
+```text
+uuid | varchar(255)
+```
+
+Then verify values:
+
+```sql
+SELECT entity_id, email, uuid
+FROM customer_grid_flat
+ORDER BY entity_id DESC
+LIMIT 10;
+```
+
+## Admin Verification
+
+Open Magento Admin:
+
+```text
+Customers -> All Customers
+```
+
+Verify:
+
+```text
+- The UUID column is visible in the customer grid.
+- UUID values are displayed.
+- UUID is not editable in the customer edit form.
+- Customer grid reindex completes successfully.
+```
+
+If the UUID column is not visible immediately, run:
+
+```bash
+bin/magento cache:flush
+bin/magento indexer:reset customer_grid
+bin/magento indexer:reindex customer_grid
+```
+
+## GraphQL API Access
+
+The module extends the existing GraphQL `Customer` object with the `uuid` field.
+
+UUID is available only through authenticated customer GraphQL requests.
+
+### GraphQL query
+
+```graphql
+query {
+  customer {
+    email
+    uuid
+  }
+}
+```
+
+## GraphQL Testing with curl
+
+Set test variables:
+
+```bash
+BASE_URL="https://example.com"
+EMAIL="customer@example.com"
+PASSWORD="Pa5Sw0rd123!"
+```
+
+### 1. Verify guest access is rejected
+
+```bash
+curl -s -X POST "$BASE_URL/graphql" \
+  -H "Content-Type: application/json" \
+  --data-binary '{
+    "query": "query { customer { email uuid } }"
+  }' | jq
+```
+
+Expected result: the request should be rejected with an authorization error.
+
+The response must not expose `uuid`.
+
+### 2. Generate customer token
+
+```bash
+TOKEN=$(curl -s -X POST "$BASE_URL/graphql" \
+  -H "Content-Type: application/json" \
+  --data-binary "{
+    \"query\": \"mutation { generateCustomerToken(email: \\\"$EMAIL\\\", password: \\\"$PASSWORD\\\") { token } }\"
+  }" | jq -r '.data.generateCustomerToken.token')
+
+echo "$TOKEN"
+```
+
+Expected result: a customer bearer token is returned.
+
+### 3. Verify authenticated UUID access
+
+```bash
+curl -s -X POST "$BASE_URL/graphql" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  --data-binary '{
+    "query": "query { customer { email uuid } }"
+  }' | jq
+```
+
+Expected result:
+
+```json
+{
+  "data": {
+    "customer": {
+      "email": "customer@example.com",
+      "uuid": "550e8400-e29b-41d4-a716-446655440000"
+    }
+  }
+}
+```
+
+### 4. Verify UUID format
+
+```bash
+curl -s -X POST "$BASE_URL/graphql" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  --data-binary '{
+    "query": "query { customer { uuid } }"
+  }' | jq -r '.data.customer.uuid'
+```
+
+Expected format:
+
+```text
+xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+```
+
+Example:
+
+```text
+550e8400-e29b-41d4-a716-446655440000
+```
+
+## Testing Procedures
+
+### 1. PHP syntax check
+
+```bash
+find vendor/coresh/module-customer-attribute -name "*.php" -print0 \
+  | xargs -0 -n1 php -l
+```
+
+Expected result:
+
+```text
+No syntax errors detected
+```
+
+### 2. Composer validation
+
+```bash
+composer validate vendor/coresh/module-customer-attribute/composer.json --strict
+```
+
+### 3. Magento dependency injection compilation
+
+```bash
+bin/magento setup:di:compile
+```
+
+Expected result: compilation completes without errors.
+
+### 4. Magento setup and index verification
+
+```bash
+bin/magento setup:upgrade
+bin/magento cache:flush
+bin/magento indexer:reset customer_grid
+bin/magento indexer:reindex customer_grid
+```
+
+Expected result: setup and customer grid reindex complete successfully.
+
+### 5. Unit tests
+
+```bash
+vendor/bin/phpunit vendor/coresh/module-customer-attribute/Test/Unit --display-all-issues
+```
+
+Expected result:
+
+```text
+OK (4 tests, 13 assertions)
+```
+
+### 6. Magento Coding Standard
+
+If Magento Coding Standard is installed:
+
+```bash
+vendor/bin/phpcs vendor/coresh/module-customer-attribute --standard=Magento2
+```
+
+If the Magento test ruleset is available:
+
+```bash
+vendor/bin/phpcs vendor/coresh/module-customer-attribute \
+  --standard=dev/tests/static/testsuite/Magento/Test/Php/_files/phpcs/ruleset.xml
+```
+
+### 7. Integration tests
+
+Integration tests require a configured Magento integration testing environment.
+
+Check that the integration test configuration exists:
+
+```bash
+ls -la dev/tests/integration/etc/install-config-mysql.php
+```
+
+Run integration tests:
+
+```bash
+vendor/bin/phpunit \
+  -c dev/tests/integration/phpunit.xml.dist \
+  vendor/coresh/module-customer-attribute/Test/Integration
+```
+
+## Functional Acceptance Checklist
+
+Before delivery, verify:
+
+```text
+[OK] Module is installed and enabled.
+[OK] setup:upgrade completes successfully.
+[OK] setup:di:compile completes successfully.
+[OK] customer_entity.uuid exists.
+[OK] customer_entity.uuid has a unique index.
+[OK] Existing customers have UUID values.
+[OK] New customers receive UUID values automatically.
+[OK] Existing UUIDs are not overwritten.
+[OK] Duplicate UUIDs do not exist.
+[OK] customer_grid_flat.uuid exists after customer_grid reindex.
+[OK] UUID is visible in the Admin customer grid.
+[OK] UUID is not editable in the Admin customer form.
+[OK] Guest GraphQL request does not expose UUID.
+[OK] Authenticated GraphQL customer query returns UUID.
+[OK] Unit tests pass.
+[OK] PHP syntax check passes.
+[OK] Magento Coding Standard is checked.
+```
+
+## Rollback Notes
+
+To disable the module:
+
+```bash
+bin/magento module:disable Coresh_CustomerAttribute
+bin/magento setup:upgrade
+bin/magento cache:flush
+```
+
+The module adds persistent database schema changes, including the `customer_entity.uuid` column. Removing database columns should be handled carefully and only after confirming that no external integrations depend on UUID values.
+
+Recommended safe rollback approach:
+
+```text
+1. Disable the module.
+2. Keep existing UUID data unless permanent removal is required.
+3. Take a database backup before removing schema changes.
+4. Remove schema only through a controlled deployment or migration process.
+```
+
+# Architecture
 
 It automatically:
 
@@ -11,40 +390,6 @@ It automatically:
 Its main purpose is to give each customer a stable, unique, secure external identifier without exposing the internal `customer_id`.
 
 ## Installation
-
-Install the module via Composer:
-
-```bash
-composer require coresh/module-customer-attribute
-```
-
-Enable the module and apply Magento setup changes:
-
-```bash
-bin/magento module:enable Coresh_CustomerAttribute
-bin/magento setup:upgrade
-bin/magento cache:flush
-```
-
-For production mode, also run:
-
-```bash
-bin/magento setup:di:compile
-bin/magento setup:static-content:deploy -f
-bin/magento indexer:reset customer_grid
-bin/magento indexer:reindex customer_grid
-bin/magento cache:flush
-
-```
-
-Important:
-
-```bash
-bin/magento indexer:reset customer_grid
-bin/magento indexer:reindex customer_grid
-bin/magento cache:flush
-
-```
 
 During `bin/magento setup:upgrade`, the module creates the customer UUID attribute metadata, updates the customer grid configuration, and assigns UUIDs to existing customer records.
 
