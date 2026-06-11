@@ -8,7 +8,6 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for UUID generation and validation.
-  *
  *
  * @author: Dmitrii Dmitriev
  * @link: https://www.upwork.com/freelancers/dmitriid15

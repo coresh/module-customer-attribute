@@ -8,13 +8,11 @@ use Coresh\CustomerAttribute\Model\Uuid\Assigner;
 use Coresh\CustomerAttribute\Model\Uuid\GeneratorInterface;
 use Coresh\CustomerAttribute\Setup\Patch\Data\AddCustomerAttributeAttribute;
 use Magento\Customer\Api\Data\CustomerInterface;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * Unit tests for customer UUID assignment rules.
-  *
  *
  * @author: Dmitrii Dmitriev
  * @link: https://www.upwork.com/freelancers/dmitriid15
@@ -35,11 +33,18 @@ class AssignerTest extends TestCase
             ->method('setCustomAttribute')
             ->with(AddCustomerAttributeAttribute::ATTRIBUTE_CODE, $uuid);
 
-        $generator = $this->createGenerator($uuid);
+        $generator = $this->createMock(GeneratorInterface::class);
+        $generator->expects(self::once())
+            ->method('generate')
+            ->willReturn($uuid);
+        $generator->method('isValid')->willReturnCallback(
+            static fn (string $value): bool => $value === $uuid
+        );
+
         $resource = $this->createMock(CustomerUuid::class);
         $resource->method('isUuidAssigned')->with($uuid)->willReturn(false);
 
-        $assigner = new Assigner($generator, $resource, $this->createMock(LoggerInterface::class));
+        $assigner = new Assigner($generator, $resource, new NullLogger());
         $assigner->assignToCustomer($customer);
     }
 
@@ -57,28 +62,17 @@ class AssignerTest extends TestCase
             ->method('setCustomAttribute')
             ->with(AddCustomerAttributeAttribute::ATTRIBUTE_CODE, $uuid);
 
-        $generator = $this->createGenerator($uuid);
-        $resource = $this->createMock(CustomerUuid::class);
-        $resource->method('getByCustomerId')->with(10)->willReturn($uuid);
-
-        $assigner = new Assigner($generator, $resource, $this->createMock(LoggerInterface::class));
-        $assigner->assignToCustomer($customer);
-    }
-
-    /**
-     * Create a UUID generator mock.
-     *
-     * @param string $uuid UUID value returned by generate().
-     * @return GeneratorInterface&MockObject
-     */
-    private function createGenerator(string $uuid): GeneratorInterface
-    {
         $generator = $this->createMock(GeneratorInterface::class);
-        $generator->method('generate')->willReturn($uuid);
+        $generator->expects(self::never())
+            ->method('generate');
         $generator->method('isValid')->willReturnCallback(
             static fn (string $value): bool => $value === $uuid
         );
 
-        return $generator;
+        $resource = $this->createMock(CustomerUuid::class);
+        $resource->method('getByCustomerId')->with(10)->willReturn($uuid);
+
+        $assigner = new Assigner($generator, $resource, new NullLogger());
+        $assigner->assignToCustomer($customer);
     }
 }
