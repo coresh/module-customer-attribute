@@ -31,6 +31,19 @@ For production mode, also run:
 ```bash
 bin/magento setup:di:compile
 bin/magento setup:static-content:deploy -f
+bin/magento indexer:reset customer_grid
+bin/magento indexer:reindex customer_grid
+bin/magento cache:flush
+
+```
+
+Important:
+
+```bash
+bin/magento indexer:reset customer_grid
+bin/magento indexer:reindex customer_grid
+bin/magento cache:flush
+
 ```
 
 During `bin/magento setup:upgrade`, the module creates the customer UUID attribute metadata, updates the customer grid configuration, and assigns UUIDs to existing customer records.
@@ -205,28 +218,62 @@ This design satisfies the assessment requirements while keeping the module upgra
 
 ```
 SELECT ea.attribute_id,
-    ->        ea.attribute_code,
-    ->        ea.backend_type,
-    ->        ea.is_unique,
-    ->        cea.is_visible,
-    ->        cea.is_used_in_grid,
-    ->        cea.is_visible_in_grid,
-    ->        cea.is_filterable_in_grid,
-    ->        cea.is_searchable_in_grid
-    -> FROM eav_attribute ea
-    -> JOIN customer_eav_attribute cea
-    ->   ON cea.attribute_id = ea.attribute_id
-    -> WHERE ea.entity_type_id = (
-    ->     SELECT entity_type_id
-    ->     FROM eav_entity_type
-    ->     WHERE entity_type_code = 'customer'
-    -> )
-    -> AND ea.attribute_code = 'uuid';
+              ea.attribute_code,
+              ea.backend_type,
+              ea.is_unique,
+              cea.is_visible,
+              cea.is_used_in_grid,
+              cea.is_visible_in_grid,
+              cea.is_filterable_in_grid,
+              cea.is_searchable_in_grid
+       FROM eav_attribute ea
+       JOIN customer_eav_attribute cea
+         ON cea.attribute_id = ea.attribute_id
+       WHERE ea.entity_type_id = (
+           SELECT entity_type_id
+           FROM eav_entity_type
+           WHERE entity_type_code = 'customer'
+       )
+       AND ea.attribute_code = 'uuid';
 +--------------+----------------+--------------+-----------+------------+-----------------+--------------------+-----------------------+-----------------------+
 | attribute_id | attribute_code | backend_type | is_unique | is_visible | is_used_in_grid | is_visible_in_grid | is_filterable_in_grid | is_searchable_in_grid |
 +--------------+----------------+--------------+-----------+------------+-----------------+--------------------+-----------------------+-----------------------+
 |          831 | uuid           | static       |         1 |          1 |               1 |                  1 |                     1 |                     1 |
 +--------------+----------------+--------------+-----------+------------+-----------------+--------------------+-----------------------+-----------------------+
 1 row in set (0.000 sec)
+
+```
+
+## Check source of truth:
+
+```
+SELECT entity_id, email, uuid
+     FROM customer_entity
+     ORDER BY entity_id DESC
+     LIMIT 10;
++-----------+---------------------------+--------------------------------------+
+| entity_id | email                     | uuid                                 |
++-----------+---------------------------+--------------------------------------+
+|       491 | ************************* | 3ce1458a-c499-4e64-b4ea-f3881fd2332e |
+|       490 | ************************* | 34a12bfb-a82f-410c-9d59-9be725cd739f |
+|       487 | ************************* | e30a6707-6fa4-4519-8ae3-e98dbe9555af |
++-----------+---------------------------+--------------------------------------+
+
+```
+
+## Check Grid:
+
+```
+ SELECT entity_id, email, uuid
+       FROM customer_grid_flat
+       ORDER BY entity_id DESC
+       LIMIT 10;
++-----------+---------------------------+--------------------------------------+
+| entity_id | email                     | uuid                                 |
++-----------+---------------------------+--------------------------------------+
+|       491 | ************************* | 3ce1458a-c499-4e64-b4ea-f3881fd2332e |
+|       490 | ************************* | 34a12bfb-a82f-410c-9d59-9be725cd739f |
+|       487 | ************************* | e30a6707-6fa4-4519-8ae3-e98dbe9555af |
++-----------+---------------------------+--------------------------------------+
 
 ```
